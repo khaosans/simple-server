@@ -1,21 +1,20 @@
 package com.example;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-
 import org.glassfish.grizzly.http.server.HttpServer;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class MyResourceTest {
-
     private HttpServer server;
+
     private WebTarget target;
 
     @Before
@@ -39,13 +38,27 @@ public class MyResourceTest {
         server.stop();
     }
 
-    /**
-     * Test to see that the message "Got it!" is sent in the response.
-     */
     @Test
-    public void testGetIt() {
-        Entity<String> url = Entity.entity("some_url", MediaType.TEXT_PLAIN);
-        //String responseMsg = target.path("theapp/url");
-        //assertEquals("Got it!", );
+    public void getYolo() throws Exception {
+        String response = target.path("cache/yolo").request().get(String.class);
+        assertEquals(response, "Yolo");
     }
+
+
+    @Test
+    public void addUrl() throws Exception {
+        String response = target.path("cache/URL_TO_ADD").request().post(null, String.class);
+        assert (response.startsWith("Url has been saved and the id is:"));
+    }
+
+    @Test
+    public void getUrlFromUUID() throws Exception {
+        String postResponse = target.path("cache/URL_TO_ADD").request().post(null, String.class);
+        String uuid = postResponse.split(":")[1].replace("\n", "").replace(" ", "");
+        String response = target.path(String.format("cache/%s", uuid)).request().get(String.class);
+
+        assertTrue(response.replace("\n", "").endsWith("URL_TO_ADD"));
+    }
+
+
 }

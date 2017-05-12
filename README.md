@@ -26,3 +26,4 @@ Create a database named ```url``` with the following table:
 ```
 
 Set the password and user accordingly
+

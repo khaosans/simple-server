@@ -26,7 +26,7 @@ public class MyResource {
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     @Path("{UUID}")
-    public Response getUserHistory(@PathParam("UUID") String uuid) {
+    public Response getUrlFromUUID(@PathParam("UUID") String uuid) {
 
         CacheControl cc = new CacheControl();
         cc.setMaxAge(10);
@@ -51,7 +51,7 @@ public class MyResource {
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     @Path("yolo")
-    public Response getId() {
+    public Response getYolo() {
         CacheControl cc = new CacheControl();
         cc.setMaxAge(100);
         return Response.status(200).entity("Yolo").cacheControl(cc)
@@ -61,7 +61,7 @@ public class MyResource {
     @POST
     @Consumes(MediaType.TEXT_PLAIN)
     @Path("{URL}")
-    public Response putUrl(@PathParam("URL") String url) {
+    public Response addUrl(@PathParam("URL") String url) {
         UUID uuid = UUID.randomUUID();
         String result = "Url has been saved and the id is: " + uuid + "\n";
 
