@@ -73,6 +73,6 @@ public class MyResource {
             e.printStackTrace();
         }
 
-        return Response.status(201).entity(result).build();
+        return Response.status(200).entity(result).build();
     }
 }
