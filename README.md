@@ -1,6 +1,6 @@
 ******simple-service******
 
-This simple service is an api that allows for the storage of a string which could also be a url.  This url is cached in the server once a url is posted like below. There is also a required database for persistence.  In addition to the local cache, the get is cache on the browser with a max-age of 10 seconds. 
+This simple service is an api that allows for the storage of a string which could also be a url.  This url is cached in the server once a url is posted like below. There is also a required database for persistence.  In addition to the local cache, the GET is cached on the browser with a max-age of 10 seconds. 
 
 Some improvements that could be done:
 ```
