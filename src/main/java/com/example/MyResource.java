@@ -17,9 +17,8 @@ import java.util.UUID;
 @Singleton
 @Path("cache")
 public class MyResource {
-
     private Map<String, String> mapOfUrls = new HashMap<>();
-    private Date lastModified = new Date();
+    private Date lastModified = null;
 
     private MySql mySql = new MySql();
 
@@ -64,6 +63,7 @@ public class MyResource {
     public Response addUrl(@PathParam("URL") String url) {
         UUID uuid = UUID.randomUUID();
         String result = "Url has been saved and the id is: " + uuid + "\n";
+        lastModified = new Date();
 
         mapOfUrls.put(String.valueOf(uuid), url);
 
