@@ -23,7 +23,7 @@ curl -X GET http://localhost:8080/theapp/cache/0e1fcb39-fa02-43e6-b8c2-79425405d
    Your url from the db: second
 ```
 
-For now I'm displaying both gets to sanity check that I'm getting one from the local cache and one form the database.  
+For now I'm displaying both gets to sanity check that I'm getting one from the local cache and one from the database.  
 
 Database Required--Set up the database (MySql):
 
