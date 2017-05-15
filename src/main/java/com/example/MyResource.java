@@ -1,15 +1,26 @@
 package com.example;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.http.HttpException;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
+
 import javax.inject.Singleton;
 import javax.ws.rs.*;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.sql.SQLException;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Root resource (exposed at "myresource" path)
@@ -17,62 +28,67 @@ import java.util.UUID;
 @Singleton
 @Path("cache")
 public class MyResource {
-    private Map<String, String> mapOfUrls = new HashMap<>();
-    private Date lastModified = null;
 
-    private MySql mySql = new MySql();
+    private Date lastModified = new Date();
+
+    private LoadingCache<String, HttpResponse> responseCacheMap = CacheBuilder.newBuilder()
+            .maximumSize(1000)
+            .expireAfterWrite(10, TimeUnit.SECONDS)
+            .build(new CacheLoader<String, HttpResponse>() {
+                @Override
+                public HttpResponse load(String key) throws Exception {
+                    return getFromDatabase(key);
+                }
+            });
+
+    private HttpResponse getFromDatabase(String empId) {
+        //TODO implement a database option
+        return null;
+    }
 
     @GET
     @Produces(MediaType.TEXT_PLAIN)
-    @Path("{UUID}")
-    public Response getUrlFromUUID(@PathParam("UUID") String uuid) {
-
+    @Path("{md5}")
+    public Response getUserHistory(@PathParam("md5") String md5) throws Exception {
         CacheControl cc = new CacheControl();
         cc.setMaxAge(10);
         cc.setPrivate(true);
 
-        String url = mapOfUrls.get(uuid);
-        String urlFromDb = null;
+        HttpResponse httpResponse = responseCacheMap.get(md5);
 
-        try {
-            urlFromDb = mySql.get(uuid);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        String responseAsString = EntityUtils.toString(httpResponse.getEntity());
 
         return Response.status(200)
-                .entity("Your url be : " + url + "\n" + "Your url from the db: " + urlFromDb + "\n").lastModified(lastModified).cacheControl(cc)
+                .entity(responseAsString).lastModified(lastModified).cacheControl(cc)
                 .build();
-
     }
-
 
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     @Path("yolo")
-    public Response getYolo() {
+    public Response getId() {
         CacheControl cc = new CacheControl();
         cc.setMaxAge(100);
-        return Response.status(200).entity("Yolo").cacheControl(cc)
+        return Response.status(200).entity("yolo").cacheControl(cc)
                 .build();
     }
 
     @POST
     @Consumes(MediaType.TEXT_PLAIN)
     @Path("{URL}")
-    public Response addUrl(@PathParam("URL") String url) {
-        UUID uuid = UUID.randomUUID();
-        String result = "Url has been saved and the id is: " + uuid + "\n";
-        lastModified = new Date();
+    public Response putUrl(@PathParam("URL") String url) throws URISyntaxException, IOException, HttpException, NoSuchAlgorithmException {
 
-        mapOfUrls.put(String.valueOf(uuid), url);
+        HttpClient client = new DefaultHttpClient();
+        HttpGet request = new HttpGet("http://" + url);
+        HttpResponse response = client.execute(request);
 
-        try {
-            mySql.add(String.valueOf(uuid), url);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        String shaHexString = shaHex(url);
+        responseCacheMap.put(shaHexString, response);
 
-        return Response.status(200).entity(result).build();
+        return Response.status(200).entity(shaHexString).build();
+    }
+
+    private String shaHex(String stringToEncrypt) throws NoSuchAlgorithmException {
+        return DigestUtils.shaHex(stringToEncrypt);
     }
 }

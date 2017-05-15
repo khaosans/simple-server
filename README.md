@@ -1,40 +1,27 @@
 ******simple-service******
+To run the program do the following:
 
-This simple service is an api that allows for the storage of a string which could also be a url.  This url is cached in the server once a url is posted like below. There is also a required database for persistence.  In addition to the local cache, the GET is cached on the browser with a max-age of 10 seconds. 
+```mvn clean compile```
 
-Some improvements that could be done:
-```
-De-couple the database and cache and have them be optional so long as one existed.  
+```mvn clean test```
 
-Dockerize for easier deployment.
+```mvn exec:java```
 
-Create a CI build.
-```
+Usages:
 
-In order to post, you would need to run this curl command:
+```curl -X POST http://localhost:8080/theapp/cache/www.google.com```
 
-``curl -X POST http://localhost:8080/theapp/cache/<url_here>``
+Will return a shaHex value:
 
-It will spit out a uuid which you can then use to retrieve that value (example below):
+```d8b99f68b208b5453b391cb0c6c3d6a9824f3c3a```
 
-```
-curl -X GET http://localhost:8080/theapp/cache/0e1fcb39-fa02-43e6-b8c2-79425405d1db
-   Your url be : second
-   Your url from the db: second
-```
+With this value you can run a get:
 
-For now I'm displaying both gets to sanity check that I'm getting one from the local cache and one form the database.  
+```curl -X GET http://localhost:8080/theapp/cache/d8b99f68b208b5453b391cb0c6c3d6a9824f3c3a```
 
-Database Required--Set up the database (MySql):
+This will return a string version of the response :
 
-Create a database named ```url``` with the following table:
-```$xslt
- CREATE TABLE `url` (
-          `k` varchar(200) DEFAULT NULL,
-          `v` varchar(200) DEFAULT NULL
-        ) 
-```
-
-
-
-
+(Truncated response below)
+```!DOCTYPE html>
+   <html lang="en" id="facebook" class="no_js">
+   <head><meta charset="utf-8" /><meta name="referrer" content="default" id="meta_referrer" /><script>window._cstart=+new Date();</script><script>function envFlush(a){function b(c){for(var d in a)c[d]=a[d];}if(window.requireLazy){window.requireLazy(['Env'],b);}else{window.Env=window.Env||{};b(window.Env);}}envFlush({"ajaxpipe_token":"AXjPY0VM6lR5MDER","timeslice_heartbeat_config":{"pollIntervalMs":3```
