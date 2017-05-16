@@ -1,13 +1,18 @@
 package com.example;
 
 import org.glassfish.grizzly.http.server.HttpServer;
+import org.glassfish.jersey.internal.util.collection.MultivaluedStringMap;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MultivaluedHashMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -17,9 +22,6 @@ public class MyResourceTest {
 
     private WebTarget target;
 
-    private String googlePost;
-    private String facebookPost;
-    private String yahooPost;
 
     @Before
     public void setUp() throws Exception {
@@ -38,9 +40,9 @@ public class MyResourceTest {
 
         target = c.target(Main.BASE_URI);
 
-        googlePost = target.path("cache/www.google.com").request().post(null, String.class);
-        facebookPost = target.path("cache/www.facebook.com").request().post(null, String.class);
-        yahooPost = target.path("cache/www.yahoo.com").request().post(null, String.class);
+
+        //facebookPost = target.path("cache").request().post(null, String.class);
+        //yahooPost = target.path("cache").request().post(null, String.class);
     }
 
     @After
@@ -56,16 +58,46 @@ public class MyResourceTest {
 
     @Test
     public void testGoogleHex() throws Exception {
-        assertTrue(googlePost.equals("d8b99f68b208b5453b391cb0c6c3d6a9824f3c3a"));
+        MultivaluedHashMap<String, String> form = new MultivaluedStringMap();
+        form.add("url", "http://www.google.com");
+        String googleHex = target.path("cache").request().post(Entity.form(form), String.class);
+        assertTrue(googleHex.equals("738ddf35b3a85a7a6ba7b232bd3d5f1e4d284ad1"));
+        assertTrue(is200Response(form));
+
     }
 
     @Test
     public void testFacebookHex() throws Exception {
-        assertTrue(facebookPost.equals("24c4068a738f39f37e3d5ed2bbd8a9881633dc68"));
-    }
+        MultivaluedHashMap<String, String> form = new MultivaluedStringMap();
+        form.add("url", "http://www.facebook.com");
+        String faceBookHex = target.path("cache").request().post(Entity.form(form), String.class);
+        assertTrue(faceBookHex.equals("fcdaa82b65917e050dcb45f818af3382f8c0a961"));
+        assertTrue(is200Response(form));    }
 
     @Test
     public void testYahooHex() throws Exception {
-        assertTrue(yahooPost.equals("a249a2be47a6662de59e7a6be01d57736cff7748"));
+        MultivaluedHashMap<String, String> form = new MultivaluedStringMap();
+        form.add("url", "http://www.yahoo.com");
+        String yahooHex = target.path("cache").request().post(Entity.form(form), String.class);
+        assertTrue(yahooHex.equals("11897a5a38e50c6b72c7588c8ed6a153d866d5c0"));
+        assertTrue(is200Response(form));    }
+
+    @Test(expected = BadRequestException.class)
+    public void testInvalidUrl() throws Exception {
+        MultivaluedHashMap<String, String> form = new MultivaluedStringMap();
+        form.add("url", "ht://www-");
+        String invalidUrl = target.path("cache").request().post(Entity.form(form), String.class);
+        assertTrue(invalidUrl.equals("Invalid Url"));
+    }
+
+    @Test(expected = NotFoundException.class)
+    public void testBadShaGet() throws Exception {
+        String response = target.path("cache/123").request().get(String.class);
+        assertTrue(response.equals("Item does not exist"));
+    }
+
+    private Boolean is200Response(MultivaluedHashMap<String, String> form) {
+        int status = target.path("cache").request().post(Entity.form(form)).getStatus();
+        return status == 200;
     }
 }

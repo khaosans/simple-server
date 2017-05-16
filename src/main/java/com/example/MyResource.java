@@ -1,13 +1,14 @@
 package com.example;
 
+import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 
@@ -34,20 +35,11 @@ public class MyResource {
 
     private Date lastModified = new Date();
 
-    private LoadingCache<String, HttpResponse> responseCacheMap = CacheBuilder.newBuilder()
+    private Cache<String, HttpResponse> responseCacheMap = CacheBuilder.newBuilder()
             .maximumSize(1000)
-            .expireAfterWrite(10, TimeUnit.SECONDS)
-            .build(new CacheLoader<String, HttpResponse>() {
-                @Override
-                public HttpResponse load(String key) throws Exception {
-                    return getFromDatabase(key);
-                }
-            });
-
-    private HttpResponse getFromDatabase(String empId) {
-        //TODO implement a database option
-        return null;
-    }
+            .expireAfterWrite(100, TimeUnit.SECONDS)
+            .recordStats()
+            .build();
 
     @GET
     @Produces(MediaType.TEXT_PLAIN)
@@ -57,7 +49,7 @@ public class MyResource {
         cc.setMaxAge(10);
         cc.setPrivate(true);
 
-        HttpResponse httpResponse = responseCacheMap.get(shaHex);
+        HttpResponse httpResponse = responseCacheMap.getIfPresent(shaHex);
 
         if (httpResponse == null) {
             return Response.status(404).entity("Item does not exist").build();
@@ -84,19 +76,33 @@ public class MyResource {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response postUrl(@FormParam("url") String url) throws URISyntaxException, IOException, HttpException, NoSuchAlgorithmException {
         HttpResponse response;
+
         HttpClient client = new DefaultHttpClient();
-        HttpGet request = new HttpGet(url);
 
-        try {
-            response = client.execute(request);
-        } catch (UnknownHostException e) {
-            return Response.status(404).entity("Unknown Host").build();
+        if (isValidUrl(url)) {
+            try {
+                HttpGet request = new HttpGet(url);
+                response = client.execute(request);
+            } catch (UnknownHostException e) {
+                return Response.status(404).entity("Unknown Host").build();
+            } catch (HttpHostConnectException e) {
+                return Response.status(404).entity("Connection Refused").build();
+            } catch (Exception e) {
+                return Response.status(404).entity(e.getStackTrace()).build();
+            }
+
+            String shaHexString = shaHex(url);
+            responseCacheMap.put(shaHexString, response);
+
+            return Response.status(200).entity(shaHexString).build();
+        } else {
+            return Response.status(400).entity("Invalid Url").build();
         }
+    }
 
-        String shaHexString = shaHex(url);
-        responseCacheMap.put(shaHexString, response);
-
-        return Response.status(200).entity(shaHexString).build();
+    private Boolean isValidUrl(String url) {
+        String[] schemes = {"http", "https"};
+        return new UrlValidator(schemes).isValid(url);
     }
 
     private String shaHex(String stringToEncrypt) throws NoSuchAlgorithmException {
