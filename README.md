@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/khaosans/simple-service.svg?branch=master)](https://travis-ci.org/khaosans/simple-service)
 ******simple-service******
 To run the program do the following:
 
