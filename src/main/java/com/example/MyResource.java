@@ -18,6 +18,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +29,8 @@ import java.util.concurrent.TimeUnit;
 @Singleton
 @Path("cache")
 public class MyResource {
+
+    // curl -i --data "url=http://www.." http://localhost:8080/theapp/cache
 
     private Date lastModified = new Date();
 
@@ -48,13 +51,17 @@ public class MyResource {
 
     @GET
     @Produces(MediaType.TEXT_PLAIN)
-    @Path("{md5}")
-    public Response getUserHistory(@PathParam("md5") String md5) throws Exception {
+    @Path("{shaHex}")
+    public Response getFromShaHex(@PathParam("shaHex") String shaHex) throws Exception {
         CacheControl cc = new CacheControl();
         cc.setMaxAge(10);
         cc.setPrivate(true);
 
-        HttpResponse httpResponse = responseCacheMap.get(md5);
+        HttpResponse httpResponse = responseCacheMap.get(shaHex);
+
+        if (httpResponse == null) {
+            return Response.status(404).entity("Item does not exist").build();
+        }
 
         String responseAsString = EntityUtils.toString(httpResponse.getEntity());
 
@@ -74,13 +81,17 @@ public class MyResource {
     }
 
     @POST
-    @Consumes(MediaType.TEXT_PLAIN)
-    @Path("{URL}")
-    public Response putUrl(@PathParam("URL") String url) throws URISyntaxException, IOException, HttpException, NoSuchAlgorithmException {
-
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response postUrl(@FormParam("url") String url) throws URISyntaxException, IOException, HttpException, NoSuchAlgorithmException {
+        HttpResponse response;
         HttpClient client = new DefaultHttpClient();
-        HttpGet request = new HttpGet("http://" + url);
-        HttpResponse response = client.execute(request);
+        HttpGet request = new HttpGet(url);
+
+        try {
+            response = client.execute(request);
+        } catch (UnknownHostException e) {
+            return Response.status(404).entity("Unknown Host").build();
+        }
 
         String shaHexString = shaHex(url);
         responseCacheMap.put(shaHexString, response);
