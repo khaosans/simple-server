@@ -4,13 +4,13 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.validator.routines.UrlValidator;
+import org.apache.http.Header;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
@@ -56,7 +56,7 @@ public class MyResource {
         }
 
         return Response.status(200)
-                .entity(EntityUtils.toString(httpResponse.getEntity())).lastModified(lastModified).cacheControl(cc)
+                .entity(getHeaders(httpResponse.getAllHeaders())).lastModified(lastModified).cacheControl(cc)
                 .build();
     }
 
@@ -105,5 +105,13 @@ public class MyResource {
 
     private String shaHex(String stringToEncrypt) throws NoSuchAlgorithmException {
         return DigestUtils.shaHex(stringToEncrypt);
+    }
+
+    private String getHeaders(Header[] headers) {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (Header header : headers) {
+            stringBuilder.append(header.toString());
+        }
+        return stringBuilder.toString();
     }
 }
