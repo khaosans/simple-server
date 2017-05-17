@@ -10,6 +10,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
@@ -54,10 +55,8 @@ public class MyResource {
             return Response.status(404).entity("Item does not exist").build();
         }
 
-        int statusCodeOfResponse = httpResponse.getStatusLine().getStatusCode();
-
         return Response.status(200)
-                .entity(statusCodeOfResponse).lastModified(lastModified).cacheControl(cc)
+                .entity(EntityUtils.toString(httpResponse.getEntity())).lastModified(lastModified).cacheControl(cc)
                 .build();
     }
 

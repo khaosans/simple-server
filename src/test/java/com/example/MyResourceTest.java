@@ -14,8 +14,6 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MultivaluedHashMap;
 
-import java.util.Objects;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -106,8 +104,8 @@ public class MyResourceTest {
         form.add("url", "http://www.google.com");
         String hex = target.path("cache").request().post(Entity.form(form), String.class);
         assertTrue(hex.equals("738ddf35b3a85a7a6ba7b232bd3d5f1e4d284ad1"));
-        String response = target.path("cache/738ddf35b3a85a7a6ba7b232bd3d5f1e4d284ad1").request().get(String.class);
-        assert (Objects.equals(response, "200"));
+        int status = target.path("cache/738ddf35b3a85a7a6ba7b232bd3d5f1e4d284ad1").request().get().getStatus();
+        assert(status == 200);
     }
 
     private Boolean is200Response(MultivaluedHashMap<String, String> form) {
